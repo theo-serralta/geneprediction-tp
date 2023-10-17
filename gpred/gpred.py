@@ -3,24 +3,28 @@ import sys
 import os
 import csv
 import re
+from re import Pattern
+from pathlib import Path
+from typing import List, Union, Optional
 
 
-def isfile(path):# pragma: no cover
+def isfile(path: str) -> Path:  # pragma: no cover
     """Check if path is an existing file.
 
     :param path: (str) Path to the file
-    
-    :raises ArgumentTypeError: If file doesn't exist
-    
-    :return: (str) Path 
+
+    :raises ArgumentTypeError: If file does not exist
+
+    :return: (Path) Path object of the input file
     """
-    if not os.path.isfile(path):
-        if os.path.isdir(path):
-            msg = "{0} is a directory".format(path)
+    myfile = Path(path)
+    if not myfile.is_file():
+        if myfile.is_dir():
+            msg = f"{myfile.name} is a directory."
         else:
-            msg = "{0} does not exist.".format(path)
+            msg = f"{myfile.name} does not exist."
         raise argparse.ArgumentTypeError(msg)
-    return path
+    return myfile
 
 
 def get_arguments(): # pragma: no cover
@@ -35,42 +39,43 @@ def get_arguments(): # pragma: no cover
     parser.add_argument('-i', dest='genome_file', type=isfile, required=True, 
                         help="Complete genome file in fasta format")
     parser.add_argument('-g', dest='min_gene_len', type=int, 
-                        default=50, help="Minimum gene length to consider")
+                        default=50, help="Minimum gene length to consider (default 50).")
     parser.add_argument('-s', dest='max_shine_dalgarno_distance', type=int, 
                         default=16, help="Maximum distance from start codon "
-                        "where to look for a Shine-Dalgarno motif")
+                        "where to look for a Shine-Dalgarno motif (default 16).")
     parser.add_argument('-d', dest='min_gap', type=int, default=40,
-                        help="Minimum gap between two genes (shine box not included).")
-    parser.add_argument('-p', dest='predicted_genes_file', type=str, 
-                        default=os.curdir + os.sep +"predict_genes.csv",
+                        help="Minimum gap between two genes - shine box not included (default 40).")
+    parser.add_argument('-p', dest='predicted_genes_file', type=Path, 
+                        default=Path("predict_genes.csv"),
                         help="Tabular file giving position of predicted genes")
-    parser.add_argument('-o', dest='fasta_file', type=str,
-                        default=os.curdir + os.sep + "genes.fna",
+    parser.add_argument('-o', dest='fasta_file', type=Path,
+                        default=Path("genes.fna"),
                         help="Fasta file giving sequence of predicted genes")
     return parser.parse_args()
 
 
-def read_fasta(fasta_file):
+def read_fasta(fasta_file: Path) -> str:
     """Extract genome sequence from fasta files.
 
-    :param fasta_file: (str) Path to the fasta file.
+    :param fasta_file: (Path) Path to the fasta file.
     :return: (str) Sequence from the genome. 
     """
     pass
 
-def find_start(start_regex, sequence, start, stop):
+
+def find_start(start_regex: Pattern, sequence: str, start: int, stop: int) -> Union[int, None]:
     """Find next start codon before a end position.
 
     :param start_regexp: A regex object that identifies a start codon.
-    :param sequence: Sequence from the genome
-    :param start: Start position of the research
-    :param stop: Stop position of the research
+    :param sequence: (str) Sequence from the genome
+    :param start: (int) Start position of the research
+    :param stop: (int) Stop position of the research
     :return: (int) If exist, position of the start codon. Otherwise None. 
     """
     pass
 
 
-def find_stop(stop_regex, sequence, start):
+def find_stop(stop_regex: Pattern, sequence: str, start: int) -> Union[int, None]:
     """Find next stop codon that should be in the same reading phase as the start.
 
     :param stop_regexp: A regex object that identifies a stop codon.
@@ -80,7 +85,8 @@ def find_stop(stop_regex, sequence, start):
     """
     pass
 
-def has_shine_dalgarno(shine_regex, sequence, start, max_shine_dalgarno_distance):
+
+def has_shine_dalgarno(shine_regex: Pattern, sequence: str, start: int, max_shine_dalgarno_distance: int) -> bool:
     """Find a shine dalgarno motif before the start codon
 
     :param shine_regexp: A regex object that identifies a shine-dalgarno motif.
@@ -91,8 +97,9 @@ def has_shine_dalgarno(shine_regex, sequence, start, max_shine_dalgarno_distance
     """
     pass
 
-def predict_genes(sequence, start_regex, stop_regex, shine_regex, 
-                  min_gene_len, max_shine_dalgarno_distance, min_gap):
+
+def predict_genes(sequence: str, start_regex: Pattern, stop_regex: Pattern, shine_regex: Pattern, 
+                  min_gene_len: int, max_shine_dalgarno_distance: int, min_gap: int) -> List[List[int]]:
     """Predict most probable genes
 
     :param sequence: (str) Sequence from the genome.
@@ -107,15 +114,14 @@ def predict_genes(sequence, start_regex, stop_regex, shine_regex,
     pass
 
 
-def write_genes_pos(predicted_genes_file, probable_genes):
+def write_genes_pos(predicted_genes_file: Path, probable_genes: List[List[int]]) -> None:
     """Write list of gene positions.
 
-    :param predicted_genes_file: (str) Output file of gene positions.
-    :param sequence: (str) Sequence from the genome.
+    :param predicted_genes_file: (Path) Output file of gene positions.
     :param probable_genes: List of [start, stop] position of each predicted genes.
     """
     try:
-        with open(predicted_genes_file, "wt") as predict_genes:
+        with predicted_genes_file.open("wt") as predict_genes:
             predict_genes_writer = csv.writer(predict_genes, delimiter=",")
             predict_genes_writer.writerow(["Start", "Stop"])
             predict_genes_writer.writerows(probable_genes)
@@ -123,10 +129,11 @@ def write_genes_pos(predicted_genes_file, probable_genes):
         sys.exit("Error cannot open {}".format(predicted_genes_file))
 
 
-def write_genes(fasta_file, sequence, probable_genes, sequence_rc, probable_genes_comp):
+def write_genes(fasta_file: Path, sequence: str, probable_genes: List[List[int, int]], sequence_rc: str, 
+                probable_genes_comp: List[List[int, int]]):
     """Write gene sequence in fasta format
 
-    :param fasta_file: (str) Output fasta file.
+    :param fasta_file: (Path) Output fasta file.
     :param sequence: (str) Sequence of genome file in 5'->3'.
     :param probable_genes: (list) List of [start, stop] position of each predicted genes in 5'->3'.
     :param sequence_rc: (str) Sequence of genome file in 3' -> 5'.
@@ -147,20 +154,20 @@ def write_genes(fasta_file, sequence, probable_genes, sequence_rc, probable_gene
         sys.exit("Error cannot open {}".format(fasta_file))
 
 
-def reverse_complement(kmer):
+def reverse_complement(sequence: str) -> str:
     """Get the reverse complement
 
     :param sequence: (str) DNA Sequence.
     :return: (str) Reverse complemented sequence.
     """
     complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
-    return ''.join([complement[base] for base in kmer[::-1]])
+    return ''.join([complement[base] for base in sequence[::-1]])
 
 
 #==============================================================
 # Main program
 #==============================================================
-def main():
+def main() -> None: # pragma: no cover
     """
     Main program function
     """

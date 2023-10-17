@@ -3,12 +3,13 @@
 import pytest
 import os
 import re
+from pathlib import Path
 from .context import gpred
 from gpred import *
 
 
 def test_read_fasta():
-    sequence = read_fasta(os.path.abspath(os.path.join(os.path.dirname(__file__), "genome.fasta")))
+    sequence = read_fasta(Path(__file__).parent / "genome.fasta")
     assert(sequence == "AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGCTTCTGAACTGGTTACCTGCCGTGAGTAAATTAAAATTTTATTGACTTAGGTCACTAAATACTTTAACCAATATAGGCATAGCGCACAGACAGATAAAAATTACAGAGTACACAACATCCATGAAACGCATTAGCACCACCATTACCACCACCATCACCATTACCACAGGTAACGGTGCGGGCTGACGCGTACAGGAAACACAGAAAAAAGCCCGCACCTGACAGTGCGGGCTTTTTTTTTCGACCAAAGGTAACGAGGTAACAACCATGCGAGTGTTGAAGTTCGGCGGTACATCAGTGGCAAATGCAGAACGTTTTCTGCGTGTTGCCGAGGAGGTAACTCAAACCATGAAACGCATTAGCACCACCATTACCACCACCATCACCATTACCACAGGTAACGGTGCGGGCTGA")
 
 
@@ -49,7 +50,7 @@ def test_has_shine_dalgarno():
 
 
 def test_predict_genes():
-    sequence = read_fasta(os.path.abspath(os.path.join(os.path.dirname(__file__), "genome.fasta")))
+    sequence = read_fasta(Path(__file__).parent / "genome.fasta")
     start_regex = re.compile('AT[TG]|[ATCG]TG')
     stop_regex = re.compile('TA[GA]|TGA')
     shine_regex = re.compile('A?G?GAGG|GGAG|GG.{1}GG')
