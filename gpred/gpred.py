@@ -129,8 +129,8 @@ def write_genes_pos(predicted_genes_file: Path, probable_genes: List[List[int]])
         sys.exit("Error cannot open {}".format(predicted_genes_file))
 
 
-def write_genes(fasta_file: Path, sequence: str, probable_genes: List[List[int, int]], sequence_rc: str, 
-                probable_genes_comp: List[List[int, int]]):
+def write_genes(fasta_file: Path, sequence: str, probable_genes: List[List[int]], sequence_rc: str, 
+                probable_genes_comp: List[List[int]]):
     """Write gene sequence in fasta format
 
     :param fasta_file: (Path) Output fasta file.
