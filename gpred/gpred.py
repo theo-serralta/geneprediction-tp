@@ -100,7 +100,7 @@ def has_shine_dalgarno(shine_regex: Pattern, sequence: str, start: int, max_shin
 
 
 def predict_genes(sequence: str, start_regex: Pattern, stop_regex: Pattern, shine_regex: Pattern, 
-                  min_gene_len: int, max_shine_dalgarno_distance: int, min_gap: int) -> List[List[int]]:
+                  min_gene_len: int, max_shine_dalgarno_distance: int, min_gap: int) -> List:
     """Predict most probable genes
 
     :param sequence: (str) Sequence from the genome.
