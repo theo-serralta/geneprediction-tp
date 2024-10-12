@@ -220,32 +220,57 @@ def reverse_complement(sequence: str) -> str:
 #==============================================================
 # Main program
 #==============================================================
-def main() -> None: # pragma: no cover
+def main() -> None:  # pragma: no cover
     """
     Main program function
     """
-    # Gene detection over genome involves to consider a thymine instead of
-    # an uracile that we would find on the expressed RNA
-    #start_codons = ['TTG', 'CTG', 'ATT', 'ATG', 'GTG']
-    #stop_codons = ['TAA', 'TAG', 'TGA']
-    start_regex = re.compile('AT[TG]|[ATCG]TG')
-    stop_regex = re.compile('TA[GA]|TGA')
-    # Shine AGGAGGUAA
-    #AGGA ou GGAGG 
-    shine_regex = re.compile('A?G?GAGG|GGAG|GG.{1}GG')
-    # Arguments
+    # Définitions des motifs regex pour les codons d'initiation, stop et la séquence de Shine-Dalgarno
+    start_regex = re.compile(r'AT[TG]|[ATCG]TG')
+    stop_regex = re.compile(r'TA[GA]|TGA')
+    shine_regex = re.compile(r'A?G?GAGG|GGAG|GG.{1}GG')
+
+    # Récupérer les arguments
     args = get_arguments()
-    # Let us do magic in 5' to 3'
-    
-    # Don't forget to uncomment !!!
-    # Call these function in the order that you want
-    # We reverse and complement
-    #sequence_rc = reverse_complement(sequence)
-    # Call to output functions
-    #write_genes_pos(args.predicted_genes_file, probable_genes)
-    #write_genes(args.fasta_file, sequence, probable_genes, sequence_rc, probable_genes_comp)
 
+    # Lecture de la séquence du génome
+    sequence = read_fasta(args.genome_file)
 
+    # Prédiction des gènes dans le sens 5' -> 3'
+    probable_genes = predict_genes(
+        sequence=sequence,
+        start_regex=start_regex,
+        stop_regex=stop_regex,
+        shine_regex=shine_regex,
+        min_gene_len=args.min_gene_len,
+        max_shine_dalgarno_distance=args.max_shine_dalgarno_distance,
+        min_gap=args.min_gap
+    )
+
+    # Calcul du complément inverse pour le sens 3' -> 5'
+    sequence_rc = reverse_complement(sequence)
+
+    # Prédiction des gènes dans le sens 3' -> 5' (complément inverse)
+    probable_genes_rc = predict_genes(
+        sequence=sequence_rc,
+        start_regex=start_regex,
+        stop_regex=stop_regex,
+        shine_regex=shine_regex,
+        min_gene_len=args.min_gene_len,
+        max_shine_dalgarno_distance=args.max_shine_dalgarno_distance,
+        min_gap=args.min_gap
+    )
+
+    # Correction des positions des gènes dans le sens 3' -> 5' pour les rendre compatibles avec le sens 5' -> 3'
+    probable_genes_comp = [
+        [len(sequence) - end + 1, len(sequence) - start + 1] for start, end in probable_genes_rc
+    ]
+    probable_genes_comp.sort()  # Tri pour garantir un ordre croissant des positions
+
+    # Écriture des résultats dans le fichier CSV des positions
+    write_genes_pos(args.predicted_genes_file, probable_genes + probable_genes_comp)
+
+    # Écriture des séquences des gènes dans le fichier FASTA
+    write_genes(args.fasta_file, sequence, probable_genes, sequence_rc, probable_genes_comp)
 
 if __name__ == '__main__':
     main()
