@@ -132,8 +132,40 @@ def predict_genes(sequence: str, start_regex: Pattern, stop_regex: Pattern, shin
     :param min_gap: (int) Minimum distance between two genes.
     :return: (list) List of [start, stop] position of each predicted genes.
     """
-    pass
+    predicted_genes = []
+    position_courante = 0
+    sequence_length = len(sequence)
 
+    while sequence_length - position_courante >= min_gap:
+        # Cherche le prochain codon d'initiation
+        start_codon_pos = find_start(start_regex, sequence, position_courante, sequence_length)
+        if start_codon_pos is not None:
+            # Trouver le codon stop dans le même cadre de lecture
+            stop_codon_pos = find_stop(stop_regex, sequence, start_codon_pos)
+            if stop_codon_pos is not None:
+                # Vérifier si le gène a la longueur minimale requise
+                gene_length = stop_codon_pos - start_codon_pos + 3
+                if gene_length >= min_gene_len:
+                    # Vérifier la présence de la séquence de Shine-Dalgarno
+                    if has_shine_dalgarno(shine_regex, sequence, start_codon_pos, max_shine_dalgarno_distance):
+                        # Gène probable identifié, ajouter à la liste
+                        predicted_genes.append([start_codon_pos + 1, stop_codon_pos + 3])  # Positions 1-based
+                        # Avancer la position courante après ce gène
+                        position_courante = stop_codon_pos + 3 + min_gap
+                    else:
+                        # Si pas de Shine-Dalgarno, avancer d'une position
+                        position_courante += 1
+                else:
+                    # Si le gène est trop court, avancer d'une position
+                    position_courante += 1
+            else:
+                # Si pas de codon stop trouvé, avancer d'une position
+                position_courante += 1
+        else:
+            # Si pas de codon d'initiation trouvé, arrêter la recherche
+            break
+
+    return predicted_genes
 
 def write_genes_pos(predicted_genes_file: Path, probable_genes: List[List[int]]) -> None:
     """Write list of gene positions.
