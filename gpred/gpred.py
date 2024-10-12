@@ -106,8 +106,18 @@ def has_shine_dalgarno(shine_regex: Pattern, sequence: str, start: int, max_shin
     :param max_shine_dalgarno_distance: (int) Maximum distance of the shine dalgarno to the start position
     :return: (boolean) true -> has a shine dalgarno upstream to the gene, false -> no
     """
-    pass
-
+    # Calculer la plage de recherche
+    search_start = start - max_shine_dalgarno_distance
+    search_end = start - 6
+    
+    # Vérifier si la position de début de recherche est valide
+    if search_start < 0:
+        return False
+    
+    # Rechercher le motif Shine-Dalgarno dans l'intervalle
+    if shine_regex.search(sequence, search_start, search_end):
+        return True
+    return False
 
 def predict_genes(sequence: str, start_regex: Pattern, stop_regex: Pattern, shine_regex: Pattern, 
                   min_gene_len: int, max_shine_dalgarno_distance: int, min_gap: int) -> List:
