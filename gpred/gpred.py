@@ -190,21 +190,22 @@ def write_genes(fasta_file: Path, sequence: str, probable_genes: List[List[int]]
     :param sequence: (str) Sequence of genome file in 5'->3'.
     :param probable_genes: (list) List of [start, stop] position of each predicted genes in 5'->3'.
     :param sequence_rc: (str) Sequence of genome file in 3' -> 5'.
-    :param probable_genes_comp: (list)List of [start, stop] position of each predicted genes in 3' -> 5'.
+    :param probable_genes_comp: (list) List of [start, stop] position of each predicted genes in 3' -> 5'.
     """
+    
+    # Fonction locale pour diviser la séquence en lignes de 80 caractères
+    def format_sequence(seq: str, line_length: int = 80) -> str:
+        return '\n'.join(seq[i:i + line_length] for i in range(0, len(seq), line_length))
+    
     try:
         with open(fasta_file, "wt") as fasta:
-            for i,gene_pos in enumerate(probable_genes):
-                fasta.write(">gene_{0}{1}{2}{1}".format(
-                    i+1, os.linesep, 
-                    fill(sequence[gene_pos[0]-1:gene_pos[1]])))
-            i = i+1
-            for j,gene_pos in enumerate(probable_genes_comp):
-                fasta.write(">gene_{0}{1}{2}{1}".format(
-                            i+1+j, os.linesep,
-                            fill(sequence_rc[gene_pos[0]-1:gene_pos[1]])))
+            for i, gene_pos in enumerate(probable_genes):
+                fasta.write(f">gene_{i+1}\n{format_sequence(sequence[gene_pos[0]-1:gene_pos[1]])}\n")
+            i += 1
+            for j, gene_pos in enumerate(probable_genes_comp):
+                fasta.write(f">gene_{i+1+j}\n{format_sequence(sequence_rc[gene_pos[0]-1:gene_pos[1]])}\n")
     except IOError:
-        sys.exit("Error cannot open {}".format(fasta_file))
+        sys.exit(f"Error cannot open {fasta_file}")
 
 
 def reverse_complement(sequence: str) -> str:
