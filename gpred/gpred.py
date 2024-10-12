@@ -78,8 +78,10 @@ def find_start(start_regex: Pattern, sequence: str, start: int, stop: int) -> Un
     :param stop: (int) Stop position of the research
     :return: (int) If exist, position of the start codon. Otherwise None. 
     """
-    pass
-
+    match = start_regex.search(sequence, start, stop)
+    if match:
+        return match.start(0)  # Retourne la position de début du match
+    return None
 
 def find_stop(stop_regex: Pattern, sequence: str, start: int) -> Union[int, None]:
     """Find next stop codon that should be in the same reading phase as the start.
@@ -89,8 +91,11 @@ def find_stop(stop_regex: Pattern, sequence: str, start: int) -> Union[int, None
     :param start: (int) Start position of the research
     :return: (int) If exist, position of the stop codon. Otherwise None. 
     """
-    pass
-
+    for match in stop_regex.finditer(sequence, start):
+        stop_pos = match.start(0)
+        if (stop_pos - start) % 3 == 0:  # Vérifie le cadre de lecture
+            return stop_pos
+    return None
 
 def has_shine_dalgarno(shine_regex: Pattern, sequence: str, start: int, max_shine_dalgarno_distance: int) -> bool:
     """Find a shine dalgarno motif before the start codon
