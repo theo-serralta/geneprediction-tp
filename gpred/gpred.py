@@ -132,40 +132,35 @@ def predict_genes(sequence: str, start_regex: Pattern, stop_regex: Pattern, shin
     :param min_gap: (int) Minimum distance between two genes.
     :return: (list) List of [start, stop] position of each predicted genes.
     """
-    predicted_genes = []
-    position_courante = 0
-    sequence_length = len(sequence)
+    genes = []  # Liste pour stocker les positions des gènes prédits
+    pos = 0  # Position actuelle dans la séquence
+    seq_len = len(sequence)  # Longueur totale de la séquence
 
-    while sequence_length - position_courante >= min_gap:
-        # Cherche le prochain codon d'initiation
-        start_codon_pos = find_start(start_regex, sequence, position_courante, sequence_length)
-        if start_codon_pos is not None:
-            # Trouver le codon stop dans le même cadre de lecture
-            stop_codon_pos = find_stop(stop_regex, sequence, start_codon_pos)
-            if stop_codon_pos is not None:
-                # Vérifier si le gène a la longueur minimale requise
-                gene_length = stop_codon_pos - start_codon_pos + 3
-                if gene_length >= min_gene_len:
-                    # Vérifier la présence de la séquence de Shine-Dalgarno
-                    if has_shine_dalgarno(shine_regex, sequence, start_codon_pos, max_shine_dalgarno_distance):
-                        # Gène probable identifié, ajouter à la liste
-                        predicted_genes.append([start_codon_pos + 1, stop_codon_pos + 3])  # Positions 1-based
-                        # Avancer la position courante après ce gène
-                        position_courante = stop_codon_pos + 3 + min_gap
-                    else:
-                        # Si pas de Shine-Dalgarno, avancer d'une position
-                        position_courante += 1
-                else:
-                    # Si le gène est trop court, avancer d'une position
-                    position_courante += 1
+    # Parcourir la séquence tant qu'il reste de l'espace pour un gène potentiel
+    while seq_len - pos >= min_gap:
+        # Chercher le prochain codon d'initiation
+        start = find_start(start_regex, sequence, pos, seq_len)
+        if start is None:
+            break  # Aucun codon d'initiation trouvé, sortir de la boucle
+
+        # Trouver le codon de terminaison aligné sur le cadre de lecture
+        stop = find_stop(stop_regex, sequence, start)
+        
+        # Vérifier si les conditions d'un gène valide sont remplies
+        if stop and (stop - start >= min_gene_len):
+            # Vérifier la présence d'un motif Shine-Dalgarno avant le codon d'initiation
+            if has_shine_dalgarno(shine_regex, sequence, start, max_shine_dalgarno_distance):
+                # Enregistrer les positions de départ et d'arrêt en format 1-based
+                genes.append([start + 1, stop + 3])
+                # Mettre à jour la position pour ignorer ce gène et respecter le min_gap
+                pos = stop + 3 + min_gap
             else:
-                # Si pas de codon stop trouvé, avancer d'une position
-                position_courante += 1
+                pos += 1  # Avancer d'une position si pas de motif Shine-Dalgarno
         else:
-            # Si pas de codon d'initiation trouvé, arrêter la recherche
-            break
+            pos += 1  # Avancer d'une position si pas de codon stop ou longueur insuffisante
 
-    return predicted_genes
+    return genes
+
 
 def write_genes_pos(predicted_genes_file: Path, probable_genes: List[List[int]]) -> None:
     """Write list of gene positions.
